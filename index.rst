@@ -22,7 +22,7 @@ The emphasis is not so much on syntax but on answering questions, big and small,
    :numbered:
    :maxdepth: 3
 
-   go-01.rst
+   go-01
 
 
 .. Index en tabellen
