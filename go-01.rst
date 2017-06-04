@@ -1,0 +1,533 @@
+
+###################################################
+Lesson 1: Introduction, installation and first code
+###################################################
+
+Introduction
+============
+
+This tutorial approach to the Go programming language is higly personal: it handles the questions I ask myself when I study a new programming language. It works for me, let us hope it works for you as well.
+
+The emphasis is not so much on syntax but on answering questions, big and small, which cross my mind when I am learning and - when left unanswered - prevent me to work well with the language.
+
+*Why should you learn Go ?*
+
+Strangely enough, a tutorial, pretending to be big on answering questions, does not answer the very first one. I think, if you want to spend your time on learning a new language, you are likely to know the answer already. Moreover, as a side-effect of going through this tutorial, you will certainly note the ease with which Go handles concurrency, the quality of the tool set and the backwards compatibility of the language.
+
+This tutorial assumes you are already familiar with a programming language. Knowledge of `Python` would be a good basis to start this tutorial but others work as well.
+
+.. note:: I do not think that Go is a replacement of Python: changing Python for Go is like replacing a commuter's bicycle with a racing bicycle: only in particular circumstances a good idea!
+
+
+Links, bibliography
+===================
+
+
+- `The Go Programming Language <https://golang.org/>`__
+
+- `Install the Go tools <https://golang.org/doc/install>`__
+
+- `Effective Go <https://golang.org/doc/effective_go.html>`__
+
+- `The Go Programming Language Specification <https://golang.org/ref/spec>`__
+
+- `Package Documentation <https://golang.org/pkg/>`__
+
+
+
+
+
+- *Go in Action* / William Kennedy with Brian Ketelsen and Erik St. Martin, Foreword by Steve Francia, November 2015 - ISBN 9781617291784 - 264 pages
+
+- *Programming in Go: Creating Applications for the 21st Century* / Mark Summerfield - Published May 4, 2012 by Addison-Wesley Professional - ISBN 0-321-77463-9
+
+- *Go Programming Language, The* / Alan A. A. Donovan, Brian W. Kernighan - Published Nov 16, 2015 by Addison-Wesley Professional - ISBN 0-13-419058-0
+
+
+
+
+Installation
+============
+
+`The Go Programming Language <https://golang.org/>`__
+
+
+This tutorial handles Go 1.8+
+
+Go is a pragmatic language: it tries to circumvent all kinds of essentially meaningless discussions (e.g. "Where to place `{` and `}` in the code).
+
+.. warning:: Make the distinction between the Go specification and the workings of the Go tools which are installed on your computer.
+
+Working with the standard Go tools comes with a price: you develop your source code according to the way the Go designers intended it: you organise the code in a *workspace*.
+
+This *workspace* presents itself as a directory in your home directory with a standard name `go`. This directory contains the sub-directories:
+
+    - :file:`src`: contains the source code
+    - :file:`bin`: contains the generated binaries
+    - :file:`pkg`: contains the compiled libraries
+
+
+Make sure that the directory containing the :file:`go` binary is in your :envvar:`PATH`
+
+Then:
+
+.. code-block:: bash
+
+    go env
+
+
+Note the value associated with :envvar:`GOPATH` and make a subdirectory :file:`bin` in that directory. Put this new directory also in your :envvar:`PATH`
+
+Later we will come back to these directories and environment variables.
+
+
+
+First code
+==========
+
+
+Project
+-------
+
+The environment variable :envvar:`BROCADE_REGISTRY` holds the name of a *JSON* file containing a simple key/value store. These are properties to use in your software: instead of hard-coding a value, we use a `key` (consisting of lowercase ASCII, digits and a MINUS symbol) that we associate with an actual value.
+
+In this project we will build a simple go based software which can query this key/value store.
+
+
+
+Solution 1
+----------
+
+In the subdirectory :file:`src` of :envvar:`GOPATH`, make a directory :file:`brocade.be`, and here a sub-directory :file:`rphilips` (user your own *userid*).
+
+Finally, another directory :file:`delphi1`
+
+In this directory, create a file :file:`delphi1.go`:
+
+.. code-block:: go
+    :linenos:
+    :emphasize-lines: 1,3,13,16,18,24,30,37,45
+
+    package main
+
+    import (
+        "bufio"
+        "os"
+        "log"
+        "fmt"
+        "io/ioutil"
+        "encoding/json"
+        "strings"
+    )
+
+    var registry map[string]string
+
+
+    func loadRegistry() {
+      // retrieve location from environment variabel
+      registryFile := os.Getenv("BROCADE_REGISTRY")
+      if registryFile == "" {
+          log.Fatal("BROCADE_REGISTRY environment variable is not defined")
+      }
+
+      // read file
+      b, err := ioutil.ReadFile(registryFile)
+      if err != nil {
+          log.Fatal(fmt.Sprintf("Cannot read file '%s' (BROCADE_REGISTRY environment variable)\n", registryFile), err)
+      }
+
+      // interpret JSON
+      err = json.Unmarshal(b, &registry)
+      if err != nil {
+          log.Fatal(fmt.Sprintf("registry file '%s' does not contain valid JSON.\nUse http://jsonlint.com/\n", registryFile), err)
+      }
+    }
+
+
+    func main() {
+
+      // load registry
+      loadRegistry()
+
+      reader := bufio.NewReader(os.Stdin)
+
+      // loop and read until empty
+      for {
+        fmt.Print("Enter key: ")
+        key, err := reader.ReadString('\n')
+        if err != nil {
+          log.Fatal("Cannot read from stdin")
+        }
+        key = strings.TrimSpace(key)
+        if key == "" {
+          break
+        }
+        value, ok := registry[key]
+        if !ok {
+          value = "?"
+        }
+        fmt.Printf("%s -> %s\n\n", key, value)
+      }
+
+    }
+
+
+Changing to the directory with :file:`delphi1.go`
+
+.. code-block:: bash
+
+   go build
+   go install
+
+
+try it:
+
+.. code-block:: bash
+
+   delphi1
+
+
+Notes
+.......
+
+- Line 1: Every Go file contains a `package` statement. The `main` package is used for executables
+
+- Line 3: Import statement. The corresponding packages can be referenced by the last part of the impart string
+
+- Line 13: Go is statically typed and compiled, so the type of every value has to be known at compile time. In Go, evry variable is initialised, even it is *silent*.
+
+- Line 16: the basic structuring component is the `function`.
+
+- Line 18: note how a name is referenced
+
+- Line 24: Functions can return multiple values, the receiving and of the application has to 'capture' as many values as are returned
+
+- Line 30: Go can work with pointers *without* the drawback of the *C language*
+
+- Line 37: :code:`package main` needs a :code:`func main()`
+
+- Line 45: elegant and powerful way to code an infinite loop
+
+
+
+Some experiments
+..................
+
+- insert a superfluous import and compile
+
+  .. code-block:: go
+     :linenos:
+     :emphasize-lines: 6
+
+     import (
+         "bufio"
+         "os"
+         "log"
+         "fmt"
+         "crypto/aes"
+         "io/ioutil"
+         "encoding/json"
+         "strings"
+     )
+
+
+- remove :code:`package main`
+
+- remove :code:`func main()`
+
+
+
+Solution 2
+----------
+
+The previous solution does not allow for re-use: every application which needs the registry has to implement its own :code:`loadRegistry()`
+
+So, let us create a new directory: :file:`src/brocade.be/rphilips/registry` and put a file :file:`registry.go`:
+
+.. code-block:: go
+    :linenos:
+    :emphasize-lines: 1,11,13,34
+
+    package registry
+
+    import (
+        "os"
+        "log"
+        "fmt"
+        "io/ioutil"
+        "encoding/json"
+    )
+
+    var Registry = loadRegistry()
+
+    func loadRegistry() (registry map[string]string) {
+
+
+      // retrieve location from environment variabel
+      registryFile := os.Getenv("BROCADE_REGISTRY")
+      if registryFile == "" {
+          log.Fatal("BROCADE_REGISTRY environment variable is not defined")
+      }
+
+      // read file
+      b, err := ioutil.ReadFile(registryFile)
+      if err != nil {
+          log.Fatal(fmt.Sprintf("Cannot read file '%s' (BROCADE_REGISTRY environment variable)\n", registryFile), err)
+      }
+
+      // interpret JSON
+      err = json.Unmarshal(b, &registry)
+      if err != nil {
+          log.Fatal(fmt.Sprintf("registry file '%s' does not contain valid JSON.\nUse http://jsonlint.com/\n", registryFile), err)
+      }
+
+      return
+    }
+
+
+Changing to the directory with :file:`registry.go`
+
+.. code-block:: bash
+
+   go build
+   go install
+
+
+Notes
+.....
+
+- Line 1: the first line is the required package statement. The name of a registry is alsways an identifier and, by convention, lowercase
+- Line 11: a name of a variable is intoduced here.
+- Line 13: :code:`func loadRegistry` is defined with a named return value
+- Line 34: the naked :keyword:`return`, returns :code:`registry`
+
+
+
+Some experiments
+..................
+
+- remove :code:`package registry`
+
+- note the naked :code:`return`
+
+
+Finally, let us create a directory: :file:`src/brocade.be/rphilips/delphi2` and put a file :file:`delphi2.go`:
+
+
+.. code-block:: go
+    :linenos:
+    :emphasize-lines: 10,28
+
+    package main
+
+    import (
+      "bufio"
+      "fmt"
+      "os"
+      "log"
+      "strings"
+
+      "brocade.be/rphilips/registry"
+    )
+
+    func main() {
+
+      reader := bufio.NewReader(os.Stdin)
+
+      for {
+        fmt.Print("Enter key: ")
+        key, err := reader.ReadString('\n')
+        if err != nil {
+          log.Fatal("Cannot read from stdin")
+          break;
+        }
+        key = strings.TrimSpace(key)
+        if key == "" {
+          break
+        }
+        value, ok := registry.Registry[key]
+        if !ok {
+          value = "?"
+        }
+        fmt.Printf("%s -> %s\n\n", key, value)
+      }
+    }
+
+
+
+Changing to the directory with :file:`delphi2.go`
+
+.. code-block:: bash
+
+   go build
+   go install
+
+
+try it:
+
+.. code-block:: bash
+
+   delphi2
+
+
+
+Notes
+.....
+
+- Line 10: the :code:`brocade.be/rphilips/registry` library is imported. The name `registry` and all its exported items (those starting with an uppercase) are available to our program
+- Line 28: the :code:`registry.Registry` is used
+
+
+
+
+
+Some experiments
+..................
+
+- change in :file:`registry.go`: :code:`var Registry map[string]string` to :code:`var registry map[string]string` and compile
+
+
+
+
+Solution 3
+----------
+
+We can optimize this solution.
+
+
+
+Change :file:`registry.go` to:
+
+.. code-block:: go
+    :linenos:
+    :emphasize-lines: 11,14
+
+    package registry
+
+    import (
+        "os"
+        "log"
+        "fmt"
+        "io/ioutil"
+        "encoding/json"
+    )
+
+    var Registry map[string]string
+
+
+    func init() {
+      registryFile := os.Getenv("BROCADE_REGISTRY")
+      if registryFile == "" {
+          log.Fatal("BROCADE_REGISTRY environment variable is not defined")
+      }
+      b, err := ioutil.ReadFile(registryFile)
+      if err != nil {
+          log.Fatal(fmt.Sprintf("Cannot read file '%s' (BROCADE_REGISTRY environment variable)\n", registryFile), err)
+      }
+      err = json.Unmarshal(b, &Registry)
+      if err != nil {
+          log.Fatal(fmt.Sprintf("registry file '%s' does not contain valid JSON.\nUse http://jsonlint.com/\n", registryFile), err)
+      }
+
+    }
+
+
+
+Changing to the directory with :file:`registry.go`
+
+.. code-block:: bash
+
+   go build
+   go install
+
+
+
+
+
+Changing to the directory with :file:`delphi2.go`
+
+.. code-block:: bash
+
+   go build
+   go install
+
+
+Changing to the directory with :file:`registry.go`
+
+.. code-block:: bash
+
+   go build
+   go install
+
+try it:
+
+.. code-block:: bash
+
+   delphi2
+
+
+Notes
+.....
+
+- Line 14: the :code:`func init()` library is imported. There can be several of those :code:`func init()` in a package (even in the same file). These functions have no arguments and no return values. But they are executed the moment their package is imported.
+
+
+
+
+Some experiments
+..................
+
+- in :file:`registry.go`, :code:`var Registry map[string]string` after :code:`init(){...}`
+
+- in :file:`registry.go`, put a second :code:`init(){...}` after :code:`init(){...}`
+
+
+
+
+Whetting you appetite
+=====================
+
+
+Changing to the directory with :file:`delphi2.go`, chose your poison:
+
+For MS-Windows:
+
+.. code-block:: bash
+
+   GOOS=windows GOARCH=amd64 go build
+
+
+For OSX:
+
+.. code-block:: bash
+
+   GOOS=darwin GOARCH=amd64 go build
+
+
+For linux:
+
+.. code-block:: bash
+
+   GOOS=linux GOARCH=amd64 go build
+
+
+and transfer the binary to an appropriate machine. Is this a UNIX machine,
+do not forget to set the execution permission:
+
+.. code-block:: bash
+
+   chmod +x delphi2
+
+
+
+and try it:
+
+.. code-block:: bash
+
+   delphi2
+
+
+
+
+
+
